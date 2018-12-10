@@ -184,13 +184,11 @@ module.exports = class bittrex extends Exchange {
     }
 
     async fetchMarkets (params = {}) {
-        let response = await this.v2GetMarketsGetMarketSummaries ();
-        let result = [];
-        for (let i = 0; i < response['result'].length; i++) {
-            let market = response['result'][i]['Market'];
-            let id = market['MarketName'];
-            let baseId = market['MarketCurrency'];
-            let quoteId = market['BaseCurrency'];
+        const response = await this.publicGetMarkets ();
+        const result = response.result.map ((entry) => {
+            let id = entry['MarketName'];
+            let baseId = entry['MarketCurrency'];
+            let quoteId = entry['BaseCurrency'];
             let base = this.commonCurrencyCode (baseId);
             let quote = this.commonCurrencyCode (quoteId);
             let symbol = base + '/' + quote;
@@ -201,8 +199,8 @@ module.exports = class bittrex extends Exchange {
                 'amount': 8,
                 'price': pricePrecision,
             };
-            let active = market['IsActive'] || market['IsActive'] === 'true';
-            result.push ({
+            let active = entry['IsActive'] === true || entry['IsActive'] === 'true';
+            return {
                 'id': id,
                 'symbol': symbol,
                 'base': base,
@@ -210,11 +208,11 @@ module.exports = class bittrex extends Exchange {
                 'baseId': baseId,
                 'quoteId': quoteId,
                 'active': active,
-                'info': market,
+                'info': entry,
                 'precision': precision,
                 'limits': {
                     'amount': {
-                        'min': market['MinTradeSize'],
+                        'min': entry['MinTradeSize'],
                         'max': undefined,
                     },
                     'price': {
@@ -222,8 +220,8 @@ module.exports = class bittrex extends Exchange {
                         'max': undefined,
                     },
                 },
-            });
-        }
+            };
+        });
         return result;
     }
 
